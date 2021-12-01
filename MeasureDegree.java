@@ -34,12 +34,6 @@ public class MeasureDegree {
     public static class Combiner extends Reducer<Text, Text, Text, Text> {
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            /*
-            int sum = 0;
-            for (IntWritable v : values) {
-                sum += v.get();
-            }
-             */
             String out = "";
             for (Text v : values) {
                 out = out.concat(v.toString());
@@ -55,13 +49,7 @@ public class MeasureDegree {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             nodeMap = new TreeMap<String, String>();
-            NetNodes = new ArrayList<Map.Entry<String, String>>(); // Sycronize?
-            
-            /*
-            NetNodes = new ArrayList<Text>();
-            String desc = new String("Node in   degree count \t Node out   degree count");
-            context.write(new Text(desc), NullWritable.get());
-            */
+            NetNodes = new ArrayList<Map.Entry<String, String>>(); 
         }
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
@@ -86,15 +74,12 @@ public class MeasureDegree {
                 inDegree = 1.0;
             }
             Double ratioScore = sum*(outDegree/inDegree);
-            //context.write(new Text(key), new Text(String.valueOf(ratioScore)));
             
             if (nodeMap.containsKey(key.toString())) {
                 String mess = "\nduplicate \t"+key.toString()+"\n";
                 context.write(new Text(mess), new Text(nodeMap.get(key.toString())));
             }
             nodeMap.put(key.toString(), String.valueOf(ratioScore));
-            //NetNodes.add(key);
-            //context.write(key, NullWritable.get());
         }
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
@@ -113,11 +98,6 @@ public class MeasureDegree {
             for (Map.Entry<String, String> m : NetNodes) {
                 context.write(new Text(m.getKey()), new Text(m.getValue()));
             }
-            /*
-            for (Text val : NetNodes) {
-                context.write(val, NullWritable.get());
-            }
-             */
         }
     }
     public static void main(String[] args) throws Exception {
@@ -143,29 +123,6 @@ public class MeasureDegree {
         FileInputFormat.addInputPath(jobMeasureIn, new Path(args[0]));
         FileOutputFormat.setOutputPath(jobMeasureIn, new Path(args[1]));
         // Wait to complete
-        //jobMeasureIn.waitForCompletion(true);
-        // For testing
-        /*
-        Configuration measureDegOut = new Configuration();
-        Job jobMeasureOut = Job.getInstance(measureDegOut, "measure degrees out new");
-        jobMeasureOut.setJarByClass(MeasureDegree.class);
-
-        // Set up Mapper and Reducer
-        jobMeasureOut.setMapperClass(MeasureDegree.TokenizerMapperOut.class);
-        jobMeasureOut.setReducerClass(MeasureDegree.CountReducer.class);
-        jobMeasureOut.setCombinerClass(MeasureDegree.Combiner.class);
-        jobMeasureOut.setNumReduceTasks(1);
-
-        //
-        jobMeasureOut.setMapOutputKeyClass(Text.class);
-        jobMeasureOut.setMapOutputValueClass(IntWritable.class);
-        jobMeasureOut.setOutputKeyClass(Text.class);
-        jobMeasureOut.setOutputValueClass(IntWritable.class);
-
-        // IO
-        FileInputFormat.addInputPath(jobMeasureOut, new Path(args[0]));
-        FileOutputFormat.setOutputPath(jobMeasureOut, new Path(args[2])); // Change to 2
-        */
         System.exit(jobMeasureIn.waitForCompletion(true) ? 0 : 1);
     }
 }
