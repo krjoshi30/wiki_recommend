@@ -5,7 +5,7 @@ import streamlit as st
 
 NUM_RESULTS = 100
 
-
+@st.cache(show_spinner=False)
 def load_tables():
     cosine_table = pd.read_csv('./data/scores/cosine.csv', index_col=0)
     clustering_table = pd.read_csv('./data/scores/wikiClusters.csv', index_col=0)
@@ -78,24 +78,28 @@ def main():
     tables = load_tables()
 
     articles = sorted(get_row_intersection(tables))
+    articles.insert(0, '')
     article = st.selectbox(label='Current Article', options=articles)
 
-    scores = pd.DataFrame([table.loc[article.strip()] for table in tables])
-
-    scores.index = ['Cosine Similarity', 'Clustering', 'Link Similarity', 'Popularity']
-
-    recommendations = scores.dropna(axis=1).transpose()
-
     weights = get_weights()
-    recommendations['Recommendation Score'] = get_weighted_sum(recommendations, weights)
 
-    st.subheader('Recommendations')
-    recommendations = format_recommendations(recommendations, article)
-    st.dataframe(recommendations.style.background_gradient(cmap=plt.cm.Blues, high=0.35))
+    if article != '':
 
-    st.subheader('Metric Correlations')
-    correlations = recommendations.corr()
-    st.dataframe(correlations.style.background_gradient(cmap=plt.cm.Blues, high=0.35))
+        scores = pd.DataFrame([table.loc[article.strip()] for table in tables])
+
+        scores.index = ['Cosine Similarity', 'Clustering', 'Link Similarity', 'Popularity']
+
+        recommendations = scores.dropna(axis=1).transpose()
+
+        recommendations['Recommendation Score'] = get_weighted_sum(recommendations, weights)
+
+        st.subheader('Recommendations')
+        recommendations = format_recommendations(recommendations, article)
+        st.dataframe(recommendations.style.background_gradient(cmap=plt.cm.Blues, high=0.35))
+
+        st.subheader('Metric Correlations')
+        correlations = recommendations.corr()
+        st.dataframe(correlations.style.background_gradient(cmap=plt.cm.Blues, high=0.35))
 
 
 if __name__ == '__main__':
